@@ -2,23 +2,12 @@
 #include<stdlib.h>
 #include<iostream>
 #include<fstream>
-#include<io.h>
 #include<math.h>
-#include <mutex>
 #include <queue>
-#include <condition_variable>
-#include <random>
-#include<iomanip>
-
+#include "Container.cpp"
+#include <sstream>
 using namespace std;
 
-mutex              lock_print;
-mutex              lock_buffer;
-mutex              lock_ev_buffer;
-mutex              lock_pr_buffer;
-condition_variable check_buffer;
-condition_variable check_ev_buffer;
-condition_variable check_pr_buffer;
 bool               evaluation_done;
 bool               notified_about_evaluation;
 bool               printing_done;
@@ -28,7 +17,7 @@ fstream logFile, valuesFile;
 
 class Point {
 public:
-	int x, y;
+	double x, y;
 
 	Point(double x, double y) {
 		Point::x = x;
@@ -36,139 +25,148 @@ public:
 	}
 };
 
-queue<Point*> buffer;
-queue<unsigned int> evaluatedTimesBuffer;
-queue<unsigned int> printedTimesBuffer;
-
+container<Point*> *pointsContainter;
+container<unsigned int> *evalTimesContainter;
+container<unsigned int> *timeForFileOutputContainter;
+container<string> *logMessagesContainer;
 
 void PrintEvaluationToFile(double x, double y)
 {
-	valuesFile << fixed << setprecision(2) << "x: " << x << "; y: " << y << endl;
+	valuesFile << "x: " << x << "; y: " << y << endl;
 }
 
-void LogToFile(unsigned int evaluationTime, unsigned int outputTime)
+void addStringToLogBuffer(string str)
 {
-	logFile << "Evaluation time: " << evaluationTime << "milliseconds; file output time: " << outputTime << "milliseconds. " << endl;
+	ostringstream ss;
+	ss << str;
+	logMessagesContainer->push(ss.str());
 }
 
-void InitiateFiles()
+void addStringToLogBuffer(string str1, string str2, unsigned int num1, unsigned int num2)
+{
+	ostringstream ss;
+	ss << str1 << num1 << str2 << num2 << endl;
+	logMessagesContainer->push(ss.str());
+}
+
+void addStringToLogBuffer(string str1, string str2, double num1, double num2)
+{
+	ostringstream ss;
+	ss << str1 << num1 << str2 << num2 << endl;
+	logMessagesContainer->push(ss.str());
+}
+
+void initiateFiles()
 {
 	logFile.open("log.txt", ios::ate | ios::out);
 	valuesFile.open("values.txt", ios::ate | ios::out);
 }
 
-void CloseFiles()
+void closeFiles()
 {
 	logFile.close();
 	valuesFile.close();
 }
 
-double EvaluateY(double x)
+double evaluateY(double x)
 {
 	return pow(x, 3);
 }
 
-void EvaluateMathFunc()
+void writeLogFile()
 {
+	while (!logMessagesContainer->empty())
 	{
-		unique_lock<mutex> locker(lock_print);
-		cout << "[Counter]\trunning..." << endl;
+		logFile << logMessagesContainer->front();
+		logMessagesContainer->pop();
 	}
+}
+
+void evaluateMathFunc()
+{
+	addStringToLogBuffer("[thread1] thread started...\n");
 
 	for (int i = 0; i < 10; i++)
 	{
 		double x = i - 5;
 
 		unsigned int timeNowMS = clock();
-		double y = EvaluateY(x);
+		double y = evaluateY(x);
 		unsigned int lastEvaluatedTimeInMS = clock() - timeNowMS;
 
 		Point* point = new Point(x, y);
 
-		{
-			unique_lock<mutex> locker(lock_print);
-			cout << "[Counted] x: " << x << "; y: " << point->y << endl;
-		}
+		addStringToLogBuffer("[thread1] evaluated values x: ", "; y: ", x, y);
 
-		{
-			unique_lock<mutex> locker(lock_buffer);
-			buffer.push(point);
-			check_buffer.notify_all();
-
-			unique_lock<mutex> ev_locker(lock_ev_buffer);
-			evaluatedTimesBuffer.push(lastEvaluatedTimeInMS);
-			check_ev_buffer.notify_all();
-		}
+		pointsContainter->push(point);
+		evalTimesContainter->push(lastEvaluatedTimeInMS);
 	}
 }
 
-void PrintInfoAboutEvaluation()
+void printInfoAboutEvaluation()
 {
-	{
-		unique_lock<mutex> locker(lock_print);
-		cout << "[printer]\trunning..." << endl;
-	}
+	addStringToLogBuffer("[thread2] thread started...\n");
+
 	while (!evaluation_done)
 	{
-		unique_lock<mutex> locker(lock_buffer);
-		check_buffer.wait(locker, [&]() {return !buffer.empty(); });
-		while (!buffer.empty())
+		while (!pointsContainter->empty())
 		{
-			unique_lock<mutex> locker(lock_print);
 			unsigned int timeNowMS = clock();
-			Point* tmpPoint = buffer.front();
-			buffer.pop();
-			check_buffer.notify_all();
+			Point* tmpPoint = pointsContainter->front();
 
 			PrintEvaluationToFile(tmpPoint->x, tmpPoint->y);
-			cout << "[printer] x: " << tmpPoint->x << "; y: " << tmpPoint->y << endl;
+			addStringToLogBuffer("[thread2] printed values to file x: ", "; y: ", tmpPoint->x, tmpPoint->y);
 
-			unique_lock<mutex> pr_buffer_locker(lock_pr_buffer);
+			pointsContainter->pop();
+
 			unsigned int lastPrintedTimeInMS = clock() - timeNowMS;
-			printedTimesBuffer.push(lastPrintedTimeInMS);
-			check_pr_buffer.notify_all();
+			timeForFileOutputContainter->push(lastPrintedTimeInMS);
 		}
 	}
 }
 
-void PrintTiming()
+void printTiming()
 {
-	{
-		unique_lock<mutex> locker(lock_print);
-		cout << "[time printer]\trunning..." << endl;
-	}
-	while (!evaluation_done && !printing_done)
-	{
-		unique_lock<mutex> ev_buffer_locker(lock_ev_buffer);
-		check_ev_buffer.wait(ev_buffer_locker, [&]() {return !evaluatedTimesBuffer.empty(); });
+	addStringToLogBuffer("[thread3] thread started...\n");
 
-		unique_lock<mutex> pr_buffer_locker(lock_pr_buffer);
-		check_pr_buffer.wait(pr_buffer_locker, [&]() {return !printedTimesBuffer.empty(); });
-		while (!evaluatedTimesBuffer.empty() && !printedTimesBuffer.empty())
+	while (!printing_done)
+	{
+		while (!timeForFileOutputContainter->empty() && !evalTimesContainter->empty())
 		{
-			unique_lock<mutex> print_locker(lock_print);
-			LogToFile(evaluatedTimesBuffer.back(), printedTimesBuffer.back());
-			cout << "[time printer] eval time: " << evaluatedTimesBuffer.back() << "ms; file output time: " << printedTimesBuffer.back() << "ms. " << endl;
-			evaluatedTimesBuffer.pop();
-			check_ev_buffer.notify_all();
+			addStringToLogBuffer("[thread3] eval time(ms): ", "; file output time(ms): ", evalTimesContainter->front(), timeForFileOutputContainter->front());
 
-			printedTimesBuffer.pop();
-			check_pr_buffer.notify_all();
+			evalTimesContainter->pop();
+			timeForFileOutputContainter->pop();
 		}
 	}
 }
 
 int main()
 {
-	InitiateFiles();
-	thread timePrinterThread(PrintTiming);
-	thread loggerThread(PrintInfoAboutEvaluation);
-	thread evaluatingThread(EvaluateMathFunc);
+	pointsContainter = new container<Point*>();
+	evalTimesContainter = new container<unsigned int>();
+	timeForFileOutputContainter = new container<unsigned int>();
+	logMessagesContainer = new container<string>();
+
+	initiateFiles();
+	thread timePrinterThread(printTiming);
+	thread loggerThread(printInfoAboutEvaluation);
+	thread evaluatingThread(evaluateMathFunc);
+
 	evaluatingThread.join();
+	addStringToLogBuffer("[thread1] joined to main thread.\n");
 	evaluation_done = true;
+
 	loggerThread.join();
+	addStringToLogBuffer("[thread2] joined to main thread.\n");
+
 	printing_done = true;
+
 	timePrinterThread.join();
-	CloseFiles();
+	addStringToLogBuffer("[thread3] joined to main thread.\n");
+
+	writeLogFile();
+	closeFiles();
+
 	return 0;
 }

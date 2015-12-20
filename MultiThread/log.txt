@@ -1,0 +1,36 @@
+[thread3] thread started...
+[thread2] thread started...
+[thread1] thread started...
+[thread1] evaluated values x: -5; y: -125
+[thread1] evaluated values x: -4; y: -64
+[thread1] evaluated values x: -3; y: -27
+[thread2] printed values to file x: -5; y: -125
+[thread1] evaluated values x: -2; y: -8
+[thread3] eval time(ms): 0; file output time(ms): 1
+[thread1] evaluated values x: -1; y: -1
+[thread2] printed values to file x: -4; y: -64
+[thread1] evaluated values x: 0; y: 0
+[thread3] eval time(ms): 0; file output time(ms): 0
+[thread1] evaluated values x: 1; y: 1
+[thread2] printed values to file x: -3; y: -27
+[thread1] evaluated values x: 2; y: 8
+[thread3] eval time(ms): 0; file output time(ms): 1
+[thread1] evaluated values x: 3; y: 27
+[thread2] printed values to file x: -2; y: -8
+[thread3] eval time(ms): 0; file output time(ms): 0
+[thread1] evaluated values x: 4; y: 64
+[thread2] printed values to file x: -1; y: -1
+[thread3] eval time(ms): 0; file output time(ms): 0
+[thread1] joined to main thread.
+[thread2] printed values to file x: 0; y: 0
+[thread3] eval time(ms): 0; file output time(ms): 1
+[thread2] printed values to file x: 1; y: 1
+[thread3] eval time(ms): 0; file output time(ms): 0
+[thread2] printed values to file x: 2; y: 8
+[thread3] eval time(ms): 0; file output time(ms): 0
+[thread2] printed values to file x: 3; y: 27
+[thread3] eval time(ms): 0; file output time(ms): 1
+[thread2] printed values to file x: 4; y: 64
+[thread3] eval time(ms): 0; file output time(ms): 0
+[thread2] joined to main thread.
+[thread3] joined to main thread.
