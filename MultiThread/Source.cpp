@@ -9,10 +9,7 @@
 using namespace std;
 
 bool               evaluation_done;
-bool               notified_about_evaluation;
 bool               printing_done;
-bool               notified_about_printing;
-
 fstream logFile, valuesFile;
 
 class Point {
