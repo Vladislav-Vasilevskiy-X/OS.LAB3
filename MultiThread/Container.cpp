@@ -39,25 +39,6 @@ public:
 		return t;
 	}
 
-	void addRange(int num, ...)
-	{
-		va_list arguments;
-		__crt_va_start_a(arguments, num);
-		for (int i = 0; i < num; i++)
-		{
-			Add(__crt_va_arg(arguments, T));
-		}
-		__crt_va_end(arguments);
-	}
-	
-	void dump()
-	{
-		_lock.lock();
-		for (auto e : _elements)
-			cout << e << endl;
-		_lock.unlock();
-	}
-
 	bool empty()
 	{
 		return _elements.empty();
