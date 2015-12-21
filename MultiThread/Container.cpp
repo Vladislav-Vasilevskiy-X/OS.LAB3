@@ -1,9 +1,9 @@
-#include<mutex>
+﻿#include<mutex>
 #include<queue>
 using namespace std;
 
 template <typename T>
-class container
+class ThreadSafeContainer
 {
 private:
 	mutex _lock;
