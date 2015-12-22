@@ -11,41 +11,32 @@ private:
 public:
 	void push(T element)
 	{
-		_lock.lock();
+		unique_lock<mutex> lock(_lock);
 		_elements.push(element);
-		_lock.unlock();
 	}
 
 	void pop()
 	{
-		_lock.lock();
+		unique_lock<mutex> lock(_lock);
 		_elements.pop();
-		_lock.unlock();
 	}
 
 	T front()
 	{
-		_lock.lock();
+		unique_lock<mutex> lock(_lock);
 		T t = _elements.front();
-		_lock.unlock();
 		return t;
 	}
 
 	T back()
 	{
-		_lock.lock();
+		unique_lock<mutex> lock(_lock);
 		T t = _elements.back();
-		_lock.unlock();
 		return t;
 	}
 
 	bool empty()
 	{
 		return _elements.empty();
-	}
-
-	mutex getMutex()
-	{
-		return _lock;
 	}
 };

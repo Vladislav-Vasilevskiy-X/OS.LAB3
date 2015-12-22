@@ -19,22 +19,32 @@ public:
 	}
 };
 
+mutex _print_lock;
 bool evaluation_done;
 bool printing_done;
 fstream logFile, valuesFile;
 
-SmartPointer<ThreadSafeContainer<Point*>> smart_ptr_points_queue(new ThreadSafeContainer<Point*>);
-SmartPointer<ThreadSafeContainer<unsigned int>> smart_ptr_eval_time_queue(new ThreadSafeContainer<unsigned int>);
-SmartPointer<ThreadSafeContainer<unsigned int>> smart_ptr_file_out_time_queue(new ThreadSafeContainer<unsigned int>);
-SmartPointer<ThreadSafeContainer<string>> smart_ptr_log_messages_queue(new ThreadSafeContainer<string>);
+//ver 1
+//SmartPointer<ThreadSafeContainer<Point*>> smart_ptr_points_queue(new ThreadSafeContainer<Point*>);
+//SmartPointer<ThreadSafeContainer<unsigned int>> smart_ptr_eval_time_queue(new ThreadSafeContainer<unsigned int>);
+//SmartPointer<ThreadSafeContainer<unsigned int>> smart_ptr_file_out_time_queue(new ThreadSafeContainer<unsigned int>);
+//SmartPointer<ThreadSafeContainer<string>> smart_ptr_log_messages_queue(new ThreadSafeContainer<string>);
 
-void PrintEvaluationToFile(double x, double y)
+//ver2
+SmartPointer<queue<Point*>> smart_ptr_points_queue(new queue<Point*>);
+SmartPointer<queue<unsigned int>> smart_ptr_eval_time_queue(new queue<unsigned int>);
+SmartPointer<queue<unsigned int>> smart_ptr_file_out_time_queue(new queue<unsigned int>);
+SmartPointer<queue<string>> smart_ptr_log_messages_queue(new queue<string>);
+
+
+void printEvaluationToFile(double x, double y)
 {
 	valuesFile << "x: " << x << "; y: " << y << endl;
 }
 
 void addStringToLogBuffer(string str)
 {
+	unique_lock<mutex> lock(_print_lock);
 	ostringstream ss;
 	ss << str;
 	smart_ptr_log_messages_queue->push(ss.str());
@@ -42,6 +52,7 @@ void addStringToLogBuffer(string str)
 
 void addStringToLogBuffer(string str1, string str2, unsigned int num1, unsigned int num2)
 {
+	unique_lock<mutex> lock(_print_lock);
 	ostringstream ss;
 	ss << str1 << num1 << str2 << num2 << endl;
 	smart_ptr_log_messages_queue->push(ss.str());
@@ -49,6 +60,7 @@ void addStringToLogBuffer(string str1, string str2, unsigned int num1, unsigned 
 
 void addStringToLogBuffer(string str1, string str2, double num1, double num2)
 {
+	unique_lock<mutex> lock(_print_lock);
 	ostringstream ss;
 	ss << str1 << num1 << str2 << num2 << endl;
 	smart_ptr_log_messages_queue->push(ss.str());
@@ -112,7 +124,7 @@ void printInfoAboutEvaluation()
 			unsigned int timeNowMS = clock();
 			Point* tmpPoint = smart_ptr_points_queue->front();
 
-			PrintEvaluationToFile(tmpPoint->x, tmpPoint->y);
+			printEvaluationToFile(tmpPoint->x, tmpPoint->y);
 			addStringToLogBuffer("[thread2] printed values to file x: ", "; y: ", tmpPoint->x, tmpPoint->y);
 
 			smart_ptr_points_queue->pop();
