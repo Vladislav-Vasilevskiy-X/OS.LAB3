@@ -4,7 +4,6 @@
 #include<fstream>
 #include<math.h>
 #include <queue>
-#include "Container.cpp"
 #include "SmartPointer.cpp"
 #include <sstream>
 using namespace std;
@@ -35,7 +34,6 @@ SmartPointer<queue<Point*>> smart_ptr_points_queue(new queue<Point*>);
 SmartPointer<queue<unsigned int>> smart_ptr_eval_time_queue(new queue<unsigned int>);
 SmartPointer<queue<unsigned int>> smart_ptr_file_out_time_queue(new queue<unsigned int>);
 SmartPointer<queue<string>> smart_ptr_log_messages_queue(new queue<string>);
-
 
 void printEvaluationToFile(double x, double y)
 {
