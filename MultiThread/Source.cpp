@@ -30,7 +30,10 @@ fstream logFile, valuesFile;
 //SmartPointer<ThreadSafeContainer<string>> smart_ptr_log_messages_queue(new ThreadSafeContainer<string>);
 
 //ver2
-SmartPointer<queue<Point*>> smart_ptr_points_queue(new queue<Point*>);
+//SmartPointer<queue<Point*>> smart_ptr_points_queue(new queue<Point*>);
+
+//ver3
+queue<SmartPointer<Point>*> smart_pointers_queue;
 SmartPointer<queue<unsigned int>> smart_ptr_eval_time_queue(new queue<unsigned int>);
 SmartPointer<queue<unsigned int>> smart_ptr_file_out_time_queue(new queue<unsigned int>);
 SmartPointer<queue<string>> smart_ptr_log_messages_queue(new queue<string>);
@@ -103,10 +106,12 @@ void evaluateMathFunc()
 		unsigned int lastEvaluatedTimeInMS = clock() - timeNowMS;
 
 		Point* point = new Point(x, y);
+		SmartPointer<Point> *ptr = new SmartPointer<Point>(point);
 
 		addStringToLogBuffer("[thread1] evaluated values x: ", "; y: ", x, y);
 
-		smart_ptr_points_queue->push(point);
+		smart_pointers_queue.push(ptr);
+
 		smart_ptr_eval_time_queue->push(lastEvaluatedTimeInMS);
 	}
 }
@@ -117,15 +122,16 @@ void printInfoAboutEvaluation()
 
 	while (!evaluation_done)
 	{
-		while (!smart_ptr_points_queue->empty())
+		while (!smart_pointers_queue.empty())
 		{
 			unsigned int timeNowMS = clock();
-			Point* tmpPoint = smart_ptr_points_queue->front();
+			Point tmpPoint = **smart_pointers_queue.front();
 
-			printEvaluationToFile(tmpPoint->x, tmpPoint->y);
-			addStringToLogBuffer("[thread2] printed values to file x: ", "; y: ", tmpPoint->x, tmpPoint->y);
+			printEvaluationToFile(tmpPoint.x, tmpPoint.y);
+			addStringToLogBuffer("[thread2] printed values to file x: ", "; y: ", tmpPoint.x, tmpPoint.y);
 
-			smart_ptr_points_queue->pop();
+			delete smart_pointers_queue.front();
+			smart_pointers_queue.pop();
 
 			unsigned int lastPrintedTimeInMS = clock() - timeNowMS;
 			smart_ptr_file_out_time_queue->push(lastPrintedTimeInMS);
